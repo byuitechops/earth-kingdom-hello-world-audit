@@ -22,6 +22,30 @@ namespace Byui.CourseAudits.Business.Model.Audits
         }
         public void ReportAuditResults(List<AuditResult> auditResults);
         public List<AuditResult> RunAudits(List<string> courseCodes);
+        public static async Task<string> MakeHTTPRequest(string endPoint, string api_token)
+        {
+            using (client)
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", api_token);
+                // Call asynchronous network methods in a try/catch block to handle exceptions
+                try
+                {
+                    if (endPoint[0] != '/')
+                    {
+                        endPoint = "/" + endPoint;
+                    }
+                    string url = "https://byui.instructure.com" + endPoint;
+                    string responseBody = await client.GetStringAsync(url);
+
+                    return responseBody;
+                }
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine("There was an error: " + e.Message);
+                    throw;
+                }
+            }
+        }
         internal override List<AuditResult> ExecuteAudits(List<string> courseCodes)
         {
             var auditResults = new List<AuditResult>();
@@ -30,36 +54,13 @@ namespace Byui.CourseAudits.Business.Model.Audits
                 var start = DateTime.Now;
                 // make api call here (/api/v1/courses/:course_id/settings)
                 string api_token = System.Environment.GetEnvironmentVariable("CANVAS_API_TOKEN");
-                string queryString = args.Length != 0 ? args[0] : "/api/v1/courses/" + courseCode + "/settings";
+                string endPoint = args.Length != 0 ? args[0] : "/api/v1/courses/" + courseCode + "/settings";
 
                 private static readonly HttpClient client = new HttpClient();
-                public static async Task<string> MakeHTTPRequest(string queryString, string api_token)
-                {
-                    using (client)
-                    {
-                        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", api_token);
-                        // Call asynchronous network methods in a try/catch block to handle exceptions
-                        try
-                        {
-                            if (queryString[0] != '/')
-                            {
-                                queryString = "/" + queryString;
-                            }
-                            string url = "https://byui.instructure.com" + queryString;
-                            string responseBody = await client.GetStringAsync(url);
-
-                            return responseBody;
-                        }
-                        catch (HttpRequestException e)
-                        {
-                            Console.WriteLine("There was an error: " + e.Message);
-                            throw;
-                        }
-                    }
-                }
-                string callData = await HTTPHelper.MakeHTTPRequest(queryString, api_token);
-                dynamic data = JsonConvert.DeserializeObject(result);
+                string callData = await HTTPHelper.MakeHTTPRequest(endPoint, api_token);
+                
                 var result = true; // = api_call.GetValue("hide_final_grades");
+                result = callData.GetValue("hide_final_grades");
                 var currentAudit = new AuditResult
                 {
                     AuditCode = Code,
