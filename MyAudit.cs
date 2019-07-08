@@ -22,7 +22,11 @@ namespace Byui.CourseAudits.Business.Model.Audits
         public List<AuditResult> RunAudits(List<string> courseCodes);
         internal override List<AuditResult> ExecuteAudits(List<string> courseCodes)
         {
-
+            var auditResults = new List<AuditResult>();
+            foreach (var courseCode in courseCodes)
+            {
+                // our code goes here
+            }
         }
     }
 }
